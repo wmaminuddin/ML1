@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Purchase Predictor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #34495e;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .result-item {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Car Purchase Prediction</h1>
+        <div class="form-group">
+            <label for="age">Age:</label>
+            <input type="number" id="age" placeholder="Enter your age">
+        </div>
+        <div class="form-group">
+            <label for="gender">Gender:</label>
+            <select id="gender">
+                <option value="0">Male</option>
+                <option value="1">Female</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="race">Race:</label>
+            <select id="race">
+                <option value="0">Malay</option>
+                <option value="1">Chinese</option>
+                <option value="2">Indian</option>
+                <option value="3">Others</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="maritalStatus">Marital Status:</label>
+            <select id="maritalStatus">
+                <option value="0">Single</option>
+                <option value="1">Married</option>
+                <option value="2">Divorced</option>
+                <option value="3">Widowed</option>
+                <option value="4">Others</option>
+            </select>
+        </div>
+        <button onclick="predict()">Predict</button>
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        async function predict() {
+            try {
+                // Get input values
+                const age = document.getElementById('age').value;
+                const gender = document.getElementById('gender').value;
+                const race = document.getElementById('race').value;
+                const maritalStatus = document.getElementById('maritalStatus').value;
+    
+                // Validate inputs
+                if (!age) {
+                    alert("Please enter your age");
+                    return;
+                }
+    
+                // Log data being sent for debugging
+                const data = { age, gender, race, maritalStatus };
+                console.log('Sending data:', data);
+    
+                // Make the API request
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+    
+                // Check if response is successful
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server response:', response.status, errorText);
+                    throw new Error(`Server error: ${response.status}. ${errorText}`);
+                }
+    
+                // Parse JSON response
+                const result = await response.json();
+                console.log('Received result:', result);
+    
+                // Display results
+                const resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = `<h3>Prediction Results:</h3>`;
+                
+                // Check if topPredictions exists and is an array
+                if (result.topPredictions && Array.isArray(result.topPredictions)) {
+                    result.topPredictions.forEach(item => {
+                        // Use displayName if available, otherwise use carMaker
+                        const carName = item.displayName || item.carMaker;
+                        resultDiv.innerHTML += `
+                            <div class="result-item">
+                                <strong>${carName}</strong>: ${item.probability.toFixed(2)}%
+                            </div>
+                        `;
+                    });
+                } else {
+                    resultDiv.innerHTML += `<div class="result-item">No predictions available</div>`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = `
+                    <div class="result-item" style="color: red; padding: 10px; background-color: #ffeeee; border-radius: 4px;">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+    </script>
+    
+</body>
+</html>
